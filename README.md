@@ -3,7 +3,7 @@
 每天自动采集红果短剧官网公开的 4 个热播榜（综合 / 真人 / AI / 漫剧，各前 100 名），以及每部在榜剧的详情，
 算出**热门剧、飙升剧、潜力新剧、题材冷热**，发布成 GitHub Pages 上的分析看板，并导出 CSV 方便自己再分析。
 
-看板地址：**https://sentdz.github.io/drama-radar/**
+看板地址：**https://sugarwu281-sketch.github.io/drama-radar/**
 
 参考了 [hongguo-radar](https://github.com/2252399314-cyber/hongguo-radar) 的思路，代码重新写过。2026-10-13 至 10-16 的历史数据迁移自 hongguo-radar（转换脚本见 [`scripts/import_hongguo_radar.py`](scripts/import_hongguo_radar.py)，快照里带 `imported_from` 标记），10-17 起为本项目自己采集。主要改进：
 
@@ -31,9 +31,9 @@
 
 1. 新建一个仓库（公开仓库可以免费用 GitHub Pages），把这个目录推上去，默认分支叫 `main`。
 2. 仓库 **Settings → Pages → Build and deployment → Source** 选 **GitHub Actions**。
-3. 把 `config.toml` 里 `user_agent` 的地址换成你的仓库地址，提交。
+3. 确认 `config.toml` 里 `user_agent` 的地址是 `https://github.com/sugarwu281-sketch/drama-radar`（本仓库已改好），提交后生效。
 4. 打开 **Actions → radar → Run workflow** 手动跑一次（勾选「先采集一次」）。完成后看板地址是
-   `https://<你的用户名>.github.io/<仓库名>/`。
+   `https://sugarwu281-sketch.github.io/drama-radar/`。
 5. 之后每天会自动检查 5 次，官方刷新后采集一次、提交数据、重新部署。官方没刷新时什么都不做。
 
 > 历史数据只能从第一次采集那天开始积累：名次变化、增量和题材动量从第二天起才有，7 日指标要满一周。
