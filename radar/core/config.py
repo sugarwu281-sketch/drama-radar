@@ -18,10 +18,15 @@ ROOT = Path(__file__).resolve().parents[2]
 @dataclass
 class Paths:
     root: Path
+    # 可选覆盖（config.local.toml 的 [paths] 段）：把产生的数据放到仓库之外的文件夹。
+    # 不设置时保持原样：data/、reports/、_site/ 都在仓库根目录下。
+    data_dir: Optional[Path] = None
+    reports_dir: Optional[Path] = None
+    site_dir: Optional[Path] = None
 
     @property
     def data(self) -> Path:
-        return self.root / "data"
+        return self.data_dir or (self.root / "data")
 
     def snapshots(self, source: str) -> Path:
         return self.data / "snapshots" / source
@@ -34,11 +39,15 @@ class Paths:
 
     @property
     def reports(self) -> Path:
-        return self.root / "reports"
+        return self.reports_dir or (self.root / "reports")
 
     @property
     def web(self) -> Path:
         return self.root / "web"
+
+    @property
+    def site(self) -> Path:
+        return self.site_dir or (self.root / "_site")
 
 
 @dataclass
@@ -73,6 +82,17 @@ class Config:
         return int(self.general.get("batch_cutoff_hour", 9))
 
 
+def _merge(base: Dict[str, Any], extra: Dict[str, Any]) -> Dict[str, Any]:
+    """浅合并按节深合并：config.local.toml 的同名节覆盖 config.toml。"""
+    out = dict(base)
+    for key, value in extra.items():
+        if isinstance(value, dict) and isinstance(out.get(key), dict):
+            out[key] = _merge(out[key], value)
+        else:
+            out[key] = value
+    return out
+
+
 def load_config(path: Optional[Path] = None, root: Optional[Path] = None) -> Config:
     root = Path(root) if root else ROOT
     path = Path(path) if path else root / "config.toml"
@@ -80,4 +100,26 @@ def load_config(path: Optional[Path] = None, root: Optional[Path] = None) -> Con
     if path.exists():
         with path.open("rb") as fh:
             raw = tomllib.load(fh)
-    return Config(raw=raw, paths=Paths(root))
+    # 本地覆盖层：config.local.toml 不提交（见 .gitignore），用来把数据放到仓库之外的文件夹，
+    # 云端 GitHub Actions 读不到它，行为保持原样。
+    local_path = root / "config.local.toml"
+    if local_path.exists():
+        with local_path.open("rb") as fh:
+            raw = _merge(raw, tomllib.load(fh))
+    overrides = raw.get("paths", {}) or {}
+
+    def _resolve(key: str) -> Optional[Path]:
+        if key not in overrides:
+            return None
+        p = Path(overrides[key])
+        return p if p.is_absolute() else (root / p)
+
+    return Config(
+        raw=raw,
+        paths=Paths(
+            root,
+            data_dir=_resolve("data_dir"),
+            reports_dir=_resolve("reports_dir"),
+            site_dir=_resolve("site_dir"),
+        ),
+    )

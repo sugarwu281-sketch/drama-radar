@@ -68,12 +68,13 @@ def cmd_collect(config, args) -> int:
 def cmd_build(config, args) -> int:
     from radar.site import build_site
 
-    build_site(config, Path(args.out), _sources(config, args.source), log)
+    out = Path(args.out) if args.out else config.paths.site
+    build_site(config, out, _sources(config, args.source), log)
     return 0
 
 
 def cmd_serve(config, args) -> int:
-    root = Path(args.out)
+    root = Path(args.out) if args.out else config.paths.site
     if not root.exists():
         log(f"{root} 不存在，先运行 python -m radar build")
         return 1
@@ -108,13 +109,13 @@ def main(argv=None) -> int:
             p.add_argument("--force", action="store_true", help="覆盖当天已有的快照")
             p.add_argument("--allow-stale", action="store_true", help="官方没刷新也写快照（会标记为 stale）")
         if build:
-            p.add_argument("--out", default="_site", help="站点输出目录")
+            p.add_argument("--out", default=None, help="站点输出目录，默认取 config.local.toml 的 site_dir（未设置时为 _site/）")
 
     common(sub.add_parser("collect", help="采集"), collect=True)
     common(sub.add_parser("build", help="分析并生成站点"), build=True)
     common(sub.add_parser("run", help="采集 + 生成站点"), collect=True, build=True)
     serve = sub.add_parser("serve", help="本地预览")
-    serve.add_argument("--out", default="_site")
+    serve.add_argument("--out", default=None)
     serve.add_argument("--port", type=int, default=8765)
     sub.add_parser("plugins", help="列出插件")
 
