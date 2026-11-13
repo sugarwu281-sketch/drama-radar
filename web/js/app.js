@@ -98,7 +98,7 @@ async function route() {
 
 function isDark() {
   const forced = document.documentElement.dataset.theme;
-  return forced ? forced === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  return forced ? forced === "dark" : true; // 默认深色暖橙主题
 }
 
 function setupTheme() {
